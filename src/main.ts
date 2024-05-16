@@ -3,12 +3,16 @@ import audioURL from '../public/outfoxing.mp3';
 
 const audioElement = document.querySelector('audio');
 const buttonElement = document.querySelector('.play-pause') as HTMLButtonElement;
-const barDiv = document.querySelector('.bar');
+const barDiv = document.querySelector('.bar') as HTMLDivElement;
+const filledBarDiv = document.querySelector('.filled-bar') as HTMLDivElement;
+let SCREEN_WIDTH = document.querySelector('body')?.getBoundingClientRect().width || 320;
+let SCREEN_HEIGHT = document.querySelector('body')?.getBoundingClientRect().height || 400;
 let audioContext: (undefined | null | AudioContext),
   gainNode: (undefined | GainNode),
   mediaElementNode: (undefined | MediaElementAudioSourceNode),
   analyserNode: (undefined | AnalyserNode);
-let animationCancelId: (undefined | number),
+let logCancelId: (undefined | number),
+  animationCancelId: (undefined | number),
   globalSet = new Set();
 
 buttonElement && (buttonElement.innerText = 'Play')
@@ -18,11 +22,17 @@ if (audioElement) {
 }
 
 const logByteTimeDomainData = () => {
-
   if (!analyserNode) {
     return;
   }
 
+  /**
+   * Explanation of FFT:
+   * The FFT size is the number of samples used in the Fast Fourier Transform algorithm, which converts a time-domain
+   * signal into its frequency-domain representation.
+   * In summary, sample rate determines how frequently the audio signal is sampled, window size determines the size of the chunks
+   * of the signal analyzed at a time, and FFT size determines the frequency resolution of the resulting spectrum.
+   */
   analyserNode.fftSize = 2048;
   const byteTimeDomainData = new Uint8Array(analyserNode.fftSize);
   analyserNode.getByteTimeDomainData(byteTimeDomainData);
@@ -33,7 +43,25 @@ const logByteTimeDomainData = () => {
   console.log('byteTimeDomainData', byteTimeDomainData, globalSet.add(...newValue));
 
 
-  animationCancelId = requestAnimationFrame(logByteTimeDomainData);
+  logCancelId = requestAnimationFrame(logByteTimeDomainData);
+};
+
+const drawByteTimeDomainData = () => {
+  if (!analyserNode || !filledBarDiv || !barDiv) {
+    return;
+  }
+
+  analyserNode.fftSize = 2048;
+  const byteTimeDomainData = new Uint8Array(analyserNode.fftSize);
+
+  // hydrate byteTimeDomainData array with all the values.
+  analyserNode.getByteTimeDomainData(byteTimeDomainData);
+
+  byteTimeDomainData.forEach((value) => {
+    filledBarDiv.style.width = '' + value + 'px';
+  });
+
+  animationCancelId = requestAnimationFrame(drawByteTimeDomainData);
 };
 
 const setupAudioContext = () => {
@@ -59,6 +87,29 @@ const setupAudioContext = () => {
   gainNode.connect(audioContext.destination);
 };
 
+const playPauseAudio = () => {
+  if (!audioElement) {
+    return;
+  }
+
+  if (!audioContext) {
+    setupAudioContext();
+  }
+
+  if (audioElement.paused) {
+    audioElement.play();
+    buttonElement && (buttonElement.innerText = 'Pause')
+    // logByteTimeDomainData();
+    drawByteTimeDomainData();
+  }
+  else {
+    audioElement.pause();
+    logCancelId !== undefined && cancelAnimationFrame(logCancelId);
+    animationCancelId !== undefined && cancelAnimationFrame(animationCancelId);
+    buttonElement && (buttonElement.innerText = 'Play')
+  }
+}
+
 const handleKeyDown = (e: KeyboardEvent) => {
   const { key } = e;
 
@@ -66,23 +117,9 @@ const handleKeyDown = (e: KeyboardEvent) => {
     setupAudioContext();
   }
 
-  if (!audioElement) {
-    return;
-  }
-
   switch (key) {
     case ' ': {
-      if (audioElement.paused) {
-        audioElement.play();
-        buttonElement && (buttonElement.innerText = 'Pause')
-        logByteTimeDomainData();
-      }
-      else {
-        audioElement.pause();
-        animationCancelId !== undefined && cancelAnimationFrame(animationCancelId);
-        buttonElement && (buttonElement.innerText = 'Play')
-      }
-      
+      playPauseAudio();
       break;
     }
     
@@ -113,4 +150,5 @@ const handleKeyDown = (e: KeyboardEvent) => {
 }
 
 window.addEventListener('keydown', handleKeyDown);
+buttonElement.addEventListener('click', playPauseAudio)
 

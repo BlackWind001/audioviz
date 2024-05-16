@@ -37,7 +37,6 @@ h1 {
 
 #app {
   max-width: 1280px;
-  margin: 0 auto;
   padding: 2rem;
   text-align: center;
 }
@@ -93,4 +92,16 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+}
+
+.bar {
+  height: 1rem;
+  width: 320px;
+  background-color: #1a1a1a;
+}
+
+.filled-bar {
+  height: inherit;
+  width: 320px;
+  background-color: bisque;
 }
