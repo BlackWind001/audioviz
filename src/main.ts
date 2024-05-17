@@ -3,10 +3,10 @@ import audioURL from '../public/outfoxing.mp3';
 
 const audioElement = document.querySelector('audio');
 const buttonElement = document.querySelector('.play-pause') as HTMLButtonElement;
-const barDiv = document.querySelector('.bar') as HTMLDivElement;
-const filledBarDiv = document.querySelector('.filled-bar') as HTMLDivElement;
-let SCREEN_WIDTH = document.querySelector('body')?.getBoundingClientRect().width || 320;
-let SCREEN_HEIGHT = document.querySelector('body')?.getBoundingClientRect().height || 400;
+const canvas = document.querySelector('canvas');
+const canvasContext = canvas?.getContext('2d');
+let WIDTH = 1280;
+let HEIGHT = 320;
 let audioContext: (undefined | null | AudioContext),
   gainNode: (undefined | GainNode),
   mediaElementNode: (undefined | MediaElementAudioSourceNode),
@@ -19,6 +19,14 @@ buttonElement && (buttonElement.innerText = 'Play')
 
 if (audioElement) {
   audioElement.src = audioURL;
+}
+
+if (canvas && canvasContext) {
+  canvas.width = WIDTH;
+  canvas.height = HEIGHT;
+
+  canvasContext.fillStyle = "black";
+  canvasContext.fillRect(0, 0, canvas.width, canvas.height);
 }
 
 const logByteTimeDomainData = () => {
@@ -47,21 +55,33 @@ const logByteTimeDomainData = () => {
 };
 
 const drawByteTimeDomainData = () => {
-  if (!analyserNode || !filledBarDiv || !barDiv) {
+  if (!analyserNode || !canvas || !canvasContext) {
     return;
   }
 
-  analyserNode.fftSize = 2048;
-  const byteTimeDomainData = new Uint8Array(analyserNode.fftSize);
+  animationCancelId = requestAnimationFrame(drawByteTimeDomainData);
 
-  // hydrate byteTimeDomainData array with all the values.
+  analyserNode.fftSize = 1024;
+  const byteTimeDomainData = new Uint8Array(analyserNode.fftSize);
   analyserNode.getByteTimeDomainData(byteTimeDomainData);
 
-  byteTimeDomainData.forEach((value) => {
-    filledBarDiv.style.width = '' + value + 'px';
+  canvasContext.fillStyle = 'black';
+  canvasContext.fillRect(0, 0, WIDTH, HEIGHT);
+  canvasContext.strokeStyle = 'white';
+
+  canvasContext.beginPath();
+  canvasContext.moveTo(0, 0);
+
+  const xAxisSeparation = WIDTH / (analyserNode.fftSize)
+
+  byteTimeDomainData.forEach((value, index) => {
+    const x = index * xAxisSeparation;
+    const y = value;
+
+    canvasContext.lineTo(x, y);
   });
 
-  animationCancelId = requestAnimationFrame(drawByteTimeDomainData);
+  canvasContext.stroke();
 };
 
 const setupAudioContext = () => {
