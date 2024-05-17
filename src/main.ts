@@ -1,12 +1,17 @@
 import './style.css'
-import audioURL from '../public/outfoxing.mp3';
+import audioURL from '../public/playing-in-color.mp3';
 
 const audioElement = document.querySelector('audio');
-const buttonElement = document.querySelector('.play-pause') as HTMLButtonElement;
+const html = document.querySelector('html');
 const canvas = document.querySelector('canvas');
 const canvasContext = canvas?.getContext('2d');
+const FFT_SIZE = 2048;
+
+
 let WIDTH = 1280;
 let HEIGHT = 320;
+let isNotAPlayPauseTouch = false;
+let previousTouch: (undefined | Touch);
 let audioContext: (undefined | null | AudioContext),
   gainNode: (undefined | GainNode),
   mediaElementNode: (undefined | MediaElementAudioSourceNode),
@@ -15,18 +20,8 @@ let logCancelId: (undefined | number),
   animationCancelId: (undefined | number),
   globalSet = new Set();
 
-buttonElement && (buttonElement.innerText = 'Play')
-
 if (audioElement) {
   audioElement.src = audioURL;
-}
-
-if (canvas && canvasContext) {
-  canvas.width = WIDTH;
-  canvas.height = HEIGHT;
-
-  canvasContext.fillStyle = "black";
-  canvasContext.fillRect(0, 0, canvas.width, canvas.height);
 }
 
 const logByteTimeDomainData = () => {
@@ -54,6 +49,24 @@ const logByteTimeDomainData = () => {
   logCancelId = requestAnimationFrame(logByteTimeDomainData);
 };
 
+const resizeObserver = new ResizeObserver((entries) => {
+  for (let entry of entries) {
+    if (entry.borderBoxSize) {
+      WIDTH = entry.borderBoxSize[0].inlineSize;
+      HEIGHT = entry.borderBoxSize[0].blockSize;
+
+      if (canvas && canvasContext) {
+        canvas.width = WIDTH;
+        canvas.height = HEIGHT;
+      
+        canvasContext.fillStyle = "black";
+        canvasContext.fillRect(0, 0, canvas.width, canvas.height);
+      }
+      return;
+    }
+  }
+});
+
 const drawByteTimeDomainData = () => {
   if (!analyserNode || !canvas || !canvasContext) {
     return;
@@ -61,7 +74,7 @@ const drawByteTimeDomainData = () => {
 
   animationCancelId = requestAnimationFrame(drawByteTimeDomainData);
 
-  analyserNode.fftSize = 1024;
+  analyserNode.fftSize = FFT_SIZE;
   const byteTimeDomainData = new Uint8Array(analyserNode.fftSize);
   analyserNode.getByteTimeDomainData(byteTimeDomainData);
 
@@ -69,14 +82,15 @@ const drawByteTimeDomainData = () => {
   canvasContext.fillRect(0, 0, WIDTH, HEIGHT);
   canvasContext.strokeStyle = 'white';
 
-  canvasContext.beginPath();
-  canvasContext.moveTo(0, 0);
+  const xAxisSeparation = WIDTH / (analyserNode.fftSize);
+  const START_Y = HEIGHT / 2 + 128;
 
-  const xAxisSeparation = WIDTH / (analyserNode.fftSize)
+  canvasContext.beginPath();
+  // canvasContext.moveTo(0, START_Y);
 
   byteTimeDomainData.forEach((value, index) => {
     const x = index * xAxisSeparation;
-    const y = value;
+    const y = START_Y - value;
 
     canvasContext.lineTo(x, y);
   });
@@ -118,7 +132,6 @@ const playPauseAudio = () => {
 
   if (audioElement.paused) {
     audioElement.play();
-    buttonElement && (buttonElement.innerText = 'Pause')
     // logByteTimeDomainData();
     drawByteTimeDomainData();
   }
@@ -126,8 +139,29 @@ const playPauseAudio = () => {
     audioElement.pause();
     logCancelId !== undefined && cancelAnimationFrame(logCancelId);
     animationCancelId !== undefined && cancelAnimationFrame(animationCancelId);
-    buttonElement && (buttonElement.innerText = 'Play')
   }
+}
+
+const increaseVolume = (delta = 0.1) => {
+  const gain = gainNode?.gain;
+
+  if (gain === undefined) {
+    return;
+  }
+
+  const newValue = gain.value + delta;
+  (newValue < 2) && (gain.value = newValue);
+}
+
+const decreaseVolume = (delta = 0.1) => {
+  const gain = gainNode?.gain;
+
+  if (gain === undefined) {
+    return;
+  }
+
+  const newValue = gain.value - 0.1;
+  (newValue > 0) && (gain.value = newValue);
 }
 
 const handleKeyDown = (e: KeyboardEvent) => {
@@ -144,31 +178,62 @@ const handleKeyDown = (e: KeyboardEvent) => {
     }
     
     case 'ArrowUp': {
-      const gain = gainNode?.gain;
-
-      if (gain === undefined) {
-        return;
-      }
-
-      const newValue = gain.value + 0.1;
-      (newValue < 2) && (gain.value = newValue)
+      increaseVolume();
       break;
     }
 
     case 'ArrowDown': {
-      const gain = gainNode?.gain;
-
-      if (gain === undefined) {
-        return;
-      }
-
-      const newValue = gain.value - 0.1;
-      (newValue > 0) && (gain.value = newValue)
+      decreaseVolume();
       break;
     }
   }
 }
 
+const handleTouchEnd = (e: TouchEvent) => {
+  if (isNotAPlayPauseTouch) {
+
+    // Cleanup
+    isNotAPlayPauseTouch = false;
+    previousTouch = undefined;
+    return;
+  }
+
+  playPauseAudio();
+}
+
+const handleTouchMove = (e: TouchEvent) => {
+  // This is a touch move and not just a touch.
+  // i.e. the user wants to increase or decrease their volume.
+  // Setting isNotAPlayPauseTouch will ensure that the music does not
+  // stop/start playing.
+  isNotAPlayPauseTouch = true;
+
+  // There was no previous touch
+  // The user has not indicated whether they want to increase or decrease
+  // volume. So, we retun.
+  if (!previousTouch) {
+    return;
+  }
+
+  const currentTouch = e.changedTouches[0];
+  
+  if (currentTouch.clientY > previousTouch.clientY) {
+    decreaseVolume();
+  }
+  else {
+    increaseVolume();
+  }
+
+  previousTouch = currentTouch;
+}
+
+const handleTouchStart = (e: TouchEvent) => {
+  previousTouch = e.changedTouches[0];
+}
+
 window.addEventListener('keydown', handleKeyDown);
-buttonElement.addEventListener('click', playPauseAudio)
+window.addEventListener('touchstart', handleTouchStart);
+window.addEventListener('touchend', handleTouchEnd);
+window.addEventListener('touchmove', handleTouchMove);
+resizeObserver.observe(html as HTMLHtmlElement);
 
