@@ -1,5 +1,6 @@
+import initSongSelector from './initSongSelector';
+import initWaveformSelector from './initWaveformSelector';
 import './style.css'
-import audioURL from '../public/playing-in-color.mp3'
 
 type ValidFFTSizeStringType = '2048' | '1024' | '512';
 
@@ -23,16 +24,17 @@ let WIDTH = 1280;
 let HEIGHT = 320;
 let FFT_SIZE = 2048;
 let isNotAPlayPauseTouch = false;
+let currentAudioURL = '';
+let currentWaveform = 'sinewave'
 let previousTouch: (undefined | Touch);
 let audioContext: (undefined | null | AudioContext),
   gainNode: (undefined | GainNode),
   mediaElementNode: (undefined | MediaElementAudioSourceNode),
-  analyserNode: (undefined | AnalyserNode);
-let logCancelId: (undefined | number),
+  analyserNode: (undefined | AnalyserNode),
   animationCancelId: (undefined | number);
 
 if (audioElement) {
-  audioElement.src = audioURL;
+  audioElement.src = currentAudioURL;
 }
 
 /* SETUP */
@@ -61,12 +63,12 @@ const setupAudioContext = () => {
 
 /* ANIMATION OPERATIONS */
 
-const drawByteTimeDomainData = () => {
+const drawSineWave = () => {
   if (!analyserNode || !canvas || !canvasContext) {
     return;
   }
 
-  animationCancelId = requestAnimationFrame(drawByteTimeDomainData);
+  animationCancelId = requestAnimationFrame(drawSineWave);
 
   analyserNode.fftSize = FFT_SIZE;
   const byteTimeDomainData = new Uint8Array(analyserNode.fftSize);
@@ -155,12 +157,10 @@ const playPauseAudio = () => {
 
   if (audioElement.paused) {
     audioElement.play();
-    // drawByteTimeDomainData();
-    drawCircle();
+    currentWaveform === 'sinewave' ? drawSineWave() : drawCircle();
   }
   else {
     audioElement.pause();
-    logCancelId !== undefined && cancelAnimationFrame(logCancelId);
     animationCancelId !== undefined && cancelAnimationFrame(animationCancelId);
   }
 }
@@ -210,7 +210,7 @@ const resizeObserver = new ResizeObserver((entries) => {
       console.log(bestFFTSizeBasedOnWidth)
       FFT_SIZE = bestFFTSizeBasedOnWidth ? Number.parseInt(bestFFTSizeBasedOnWidth[0]) : MIN_FFT_SIZE;
 
-      drawCircle();
+      currentWaveform === 'sinewave' ? drawSineWave() : drawCircle();
 
       return;
     }
@@ -285,6 +285,30 @@ const handleTouchMove = (e: TouchEvent) => {
 const handleTouchStart = (e: TouchEvent) => {
   previousTouch = e.changedTouches[0];
 }
+
+const songSelectorCallback = (url: string) => {
+  if (!audioElement) {
+    return;
+  }
+
+  audioElement.src = url;
+  playPauseAudio();
+}
+
+const waveformSelectorCallback = (option: string) => {
+  if (!audioElement) {
+    return;
+  }
+
+  currentWaveform = option;
+
+  typeof animationCancelId === 'number'  && cancelAnimationFrame(animationCancelId);
+  
+  currentWaveform === 'sinewave' ? drawSineWave() : drawCircle();
+}
+
+initSongSelector(songSelectorCallback);
+initWaveformSelector(waveformSelectorCallback);
 
 /* REGISTER EVENT LISTENERS */
 window.addEventListener('keydown', handleKeyDown);

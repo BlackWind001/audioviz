@@ -28,7 +28,7 @@ h1 {
 }
 
 #app {
-  max-width: 1280px;
+  position: relative;
 }
 
 button {
@@ -77,4 +77,29 @@ button:focus-visible {
 
 canvas {
   display: block;
+}
+
+.overlay {
+  position: absolute;
+  width: calc(100% - 20%);
+  height: 2rem;
+  top: 20px;
+  left: calc(100% - 90%);
+  display: flex;
+  gap: 1rem;
+}
+
+.overlay > *:focus {
+  outline: none;
+}
+
+.song-selector {
+  height: inherit;
+  flex: 1;
+  text-align: center;
+  font-size: 1.25rem;
+}
+
+.waveform-selector {
+  font-size: 1.2rem;
 }

@@ -10,6 +10,16 @@
     <div id="app">
       <audio></audio>
       <canvas></canvas>
+      <div class="overlay">
+        <select class="waveform-selector">
+          <!-- Mentioning options directly here since I do not plan on adding more waveforms -->
+          <option value="sinewave">Sinewave</option>
+          <option value="circular">Circular wave</option>
+        </select>
+        <select class="song-selector">
+          <option value="">--Please choose a track to play--</option>
+        </select>
+      </div>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
