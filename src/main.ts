@@ -96,7 +96,11 @@ const drawSineWave = () => {
   canvasContext.stroke();
 };
 
-// Code from ChatGPT
+// Parts of this code are from ChatGPT
+// Specifically the logic to calculate the angle inside the for loop
+// was AI generated. I was trying to use the Mid point circle algorithm
+// but the AI used trigonometric method (this is supposed to be slower
+// but I was blocked in my approach).
 const drawCircle = () => {
   if (!canvas || !canvasContext || !analyserNode) {
     return;
