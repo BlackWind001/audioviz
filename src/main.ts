@@ -1,5 +1,5 @@
 import './style.css'
-import audioURL from '../public/outfoxing.mp3';
+import audioURL from '../public/playing-in-color.mp3'
 
 type ValidFFTSizeStringType = '2048' | '1024' | '512';
 
@@ -29,8 +29,7 @@ let audioContext: (undefined | null | AudioContext),
   mediaElementNode: (undefined | MediaElementAudioSourceNode),
   analyserNode: (undefined | AnalyserNode);
 let logCancelId: (undefined | number),
-  animationCancelId: (undefined | number),
-  globalSet = new Set();
+  animationCancelId: (undefined | number);
 
 if (audioElement) {
   audioElement.src = audioURL;
@@ -48,7 +47,7 @@ const setupAudioContext = () => {
   gainNode = audioContext.createGain();
   analyserNode = audioContext.createAnalyser();
 
-  gainNode.gain.value = 0.2;
+  gainNode.gain.value = 1;
 
   if (audioContext.state === 'suspended') {
     audioContext.resume();
@@ -61,30 +60,6 @@ const setupAudioContext = () => {
 };
 
 /* ANIMATION OPERATIONS */
-const logByteTimeDomainData = () => {
-  if (!analyserNode) {
-    return;
-  }
-
-  /**
-   * Explanation of FFT:
-   * The FFT size is the number of samples used in the Fast Fourier Transform algorithm, which converts a time-domain
-   * signal into its frequency-domain representation.
-   * In summary, sample rate determines how frequently the audio signal is sampled, window size determines the size of the chunks
-   * of the signal analyzed at a time, and FFT size determines the frequency resolution of the resulting spectrum.
-   */
-  analyserNode.fftSize = 2048;
-  const byteTimeDomainData = new Uint8Array(analyserNode.fftSize);
-  analyserNode.getByteTimeDomainData(byteTimeDomainData);
-
-  const newValue = Array.from(new Set(byteTimeDomainData))
-  console.log('sample-rate:', audioContext?.sampleRate);
-  // @ts-ignore
-  console.log('byteTimeDomainData', byteTimeDomainData, globalSet.add(...newValue));
-
-
-  logCancelId = requestAnimationFrame(logByteTimeDomainData);
-};
 
 const drawByteTimeDomainData = () => {
   if (!analyserNode || !canvas || !canvasContext) {
@@ -117,7 +92,7 @@ const drawByteTimeDomainData = () => {
   canvasContext.stroke();
 };
 
-/* Code from ChatGPT */
+// Code from ChatGPT
 const drawCircle = () => {
   if (!canvas || !canvasContext || !analyserNode) {
     return;
@@ -128,17 +103,14 @@ const drawCircle = () => {
   const numPoints = FFT_SIZE;
   const centerX = canvas.width / 2;
   const centerY = canvas.height / 2;
-  // @ts-ignore
-  const radius = FFT_SIZE_TO_RADIUS_MAP[numPoints];
+  const radius = FFT_SIZE_TO_RADIUS_MAP[('' + numPoints) as ValidFFTSizeStringType];
   const points = [];
 
-  console.log(radius)
-
+  // Clear the screen for the current animation frame
   canvasContext.fillStyle = 'black';
   canvasContext.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Draw the circle
-  canvasContext.fillStyle = 'white';
+  // Set the stroke style
   canvasContext.strokeStyle = 'white';
 
   analyserNode.fftSize = FFT_SIZE;
@@ -146,6 +118,10 @@ const drawCircle = () => {
   analyserNode.getByteTimeDomainData(byteTimeDomainData);
 
   for (let i = 0; i < numPoints; i++) {
+    // Calculating the angle of a given point by using formula:
+    // (index/total) * 360
+    // When index/total is 1 i.e index === total, then angle will be
+    // 360 degrees.
     let angle = (i / numPoints) * 2 * Math.PI;
 
     // x = r * cos(theta)
@@ -154,15 +130,16 @@ const drawCircle = () => {
     let x = centerX + (radius + byteTimeDomainData[i]) * Math.cos(angle);
     // y = r * sin(theta)
     let y = centerY + (radius + byteTimeDomainData[i]) * Math.sin(angle);
-    canvasContext.beginPath();
-    canvasContext.arc(x, y, 2, 0, 2 * Math.PI);
-    canvasContext.fill();
     
     // Store the points in an array for later access
     points.push({x: x, y: y});
   }
 
-  canvasContext.closePath();
+  canvasContext.beginPath();
+  for (let i = 0; i < points.length; i++) {
+    canvasContext.lineTo(points[i].x, points[i].y);
+  }
+  canvasContext.stroke();
 }
 
 /* AUDIO OPERATIONS */
@@ -178,7 +155,6 @@ const playPauseAudio = () => {
 
   if (audioElement.paused) {
     audioElement.play();
-    // logByteTimeDomainData();
     // drawByteTimeDomainData();
     drawCircle();
   }
