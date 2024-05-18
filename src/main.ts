@@ -1,3 +1,4 @@
+import initHelpButton from './initHelpButton';
 import initSongSelector from './initSongSelector';
 import initWaveformSelector from './initWaveformSelector';
 import './style.css'
@@ -7,6 +8,7 @@ type ValidFFTSizeStringType = '2048' | '1024' | '512';
 const audioElement = document.querySelector('audio');
 const html = document.querySelector('html');
 const canvas = document.querySelector('canvas');
+const overlayControls = document.querySelector('.overlay-controls');
 const canvasContext = canvas?.getContext('2d');
 const FFT_SIZE_TO_RADIUS_MAP = {
   '2048': Math.floor(((2048 / 2) / Math.PI) - 80),
@@ -307,13 +309,18 @@ const waveformSelectorCallback = (option: string) => {
   currentWaveform === 'sinewave' ? drawSineWave() : drawCircle();
 }
 
+/* INITIALIZE OTHER UI ELEMENTS */
 initSongSelector(songSelectorCallback);
 initWaveformSelector(waveformSelectorCallback);
+initHelpButton();
 
 /* REGISTER EVENT LISTENERS */
 window.addEventListener('keydown', handleKeyDown);
 window.addEventListener('touchstart', handleTouchStart);
 window.addEventListener('touchend', handleTouchEnd);
 window.addEventListener('touchmove', handleTouchMove);
+overlayControls && overlayControls.addEventListener('touchend', (e) => { e.stopPropagation(); });
+overlayControls && overlayControls.addEventListener('touchmove', (e) => { e.stopPropagation(); });
 resizeObserver.observe(html as HTMLHtmlElement);
+
 

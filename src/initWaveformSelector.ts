@@ -8,8 +8,4 @@ export default function initWaveformSelector (cb: Function) {
     // @ts-ignore
     cb(event.target.value);
   });
-
-  waveformSelector.addEventListener('touchend', function (e) {
-    e.stopPropagation();
-  })
 }

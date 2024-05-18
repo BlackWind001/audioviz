@@ -11,14 +11,33 @@
       <audio></audio>
       <canvas></canvas>
       <div class="overlay">
-        <select class="waveform-selector">
-          <!-- Mentioning options directly here since I do not plan on adding more waveforms -->
-          <option value="sinewave">Sinewave</option>
-          <option value="circular">Circular wave</option>
-        </select>
-        <select class="song-selector">
-          <option value="">--Please choose a track to play--</option>
-        </select>
+        <div class="overlay-controls">
+          <select class="waveform-selector">
+            <!-- Mentioning options directly here since I do not plan on adding more waveforms -->
+            <option value="sinewave">Sinewave</option>
+            <option value="circular">Circular wave</option>
+          </select>
+          <select class="song-selector">
+            <option value="">--Please choose a track to play--</option>
+          </select>
+          <button class="help-button">❔</button>
+        </div>
+        <div class="help-dialog hide">
+          <button class="close-button">❌</button>
+          <p>Select the audio and the waveform from the dropdowns</p>
+          <div>
+            <h2>Mobile users</h2>
+            <hr />
+            <p>Tap the screen to play or pause the selected audio</p>
+            <p>You can also increase and decrease the volume by moving your fingers up and down the screen respectively.</p>
+          </div>
+          <div>
+            <h2>Desktop users</h2>
+            <hr />
+            <p>Press the "Space" key to play or pause the selected audio</p>
+            <p>You can also increase and decrease the volume by using the up and down arrow keys respectively.</p>
+          </div>
+        </div>
       </div>
     </div>
     <script type="module" src="/src/main.ts"></script>

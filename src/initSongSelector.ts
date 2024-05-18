@@ -15,10 +15,6 @@ export default function initSongSelector (cb: Function) {
     'The Way Home': theWayHome
   };
   const songSelector = document.querySelector('.song-selector') as HTMLSelectElement;
-  
-  const handlePropogation = (e: TouchEvent) => {
-    e.stopPropagation();
-  }
 
   Object.keys(LABEL_TO_AUDIO_URL_MAP).forEach((key) => {
     const option = document.createElement('option');
@@ -29,7 +25,6 @@ export default function initSongSelector (cb: Function) {
     songSelector.appendChild(option);
   });
   
-  songSelector.addEventListener('touchend', handlePropogation);
   songSelector.addEventListener('change', function (e) {
     e.stopPropagation();
 

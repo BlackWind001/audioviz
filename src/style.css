@@ -45,6 +45,7 @@ button {
   background-color: #1a1a1a;
   cursor: pointer;
   transition: border-color 0.25s;
+  background-color: grey;
 }
 
 button:focus,
@@ -52,17 +53,8 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+hr {
+  border-color: grey;
 }
 
 canvas {
@@ -71,10 +63,15 @@ canvas {
 
 .overlay {
   position: absolute;
-  width: calc(100% - 20%);
-  height: 2rem;
-  top: 20px;
-  left: calc(100% - 90%);
+  width: 100%;
+  top: 0;
+  left: 0;
+  height: 100%;
+  padding: 1rem calc(100% - 90%);
+}
+
+.overlay > :not(:last-child) {
+  margin-bottom: 1rem;
 }
 
 .overlay-controls {
@@ -83,6 +80,7 @@ canvas {
 }
 
 .overlay-controls > * {
+  height: 2rem;
   border-radius: 4px;
   background-color: grey;
   outline: white;
@@ -100,25 +98,50 @@ canvas {
   flex-shrink: 1;
 }
 
-  @media (max-width: 700px) {
-    .overlay {
-      left: 0;
-      width: 100%;
-      padding: 0 0.5rem;
-      max-width: 100%;
-    }
+.hide {
+  display: none;
+}
 
-    .overlay-controls {
-      flex-wrap: wrap;
-    }
+.show {
+  display: block;
+}
 
-    .song-selector, .waveform-selector, button {
-      font-size: 1rem;
-      text-overflow: ellipsis;
-      max-width: 45%;
-    }
+.help-dialog {
+  position: relative;
+  background-color: antiquewhite;
+  opacity: 0.8;
+  color: black;
+  padding: 1rem;
+}
 
-    .song-selector {
-      text-overflow: ellipsis;
-    }
+.close-button {
+  position: absolute;
+  height: 2rem;
+  top: 0.25rem;
+  right: 0.25rem;
+  font-size: 1rem;
+  padding: 0.25rem 0.5rem;
+}
+
+@media (max-width: 700px) {
+  .overlay {
+    left: 0;
+    width: 100%;
+    padding: 1rem calc(100% - 99%);
+    max-width: 100%;
+  }
+
+  .overlay-controls {
+    flex-wrap: wrap;
+  }
+
+  .song-selector, .waveform-selector, .help-button {
+    font-size: 1rem;
+    text-overflow: ellipsis;
+    max-width: 45%;
+  }
+
+  .song-selector {
+    text-overflow: ellipsis;
+  }
   }
