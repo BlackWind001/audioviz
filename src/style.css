@@ -13,6 +13,10 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 body {
   display: flex;
   place-items: center;
@@ -101,6 +105,7 @@ canvas {
       left: 0;
       width: 100%;
       padding: 0 0.5rem;
+      max-width: 100%;
     }
 
     .overlay-controls {
