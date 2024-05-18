@@ -1,15 +1,27 @@
 import './style.css'
-import audioURL from '../public/playing-in-color.mp3';
+import audioURL from '../public/outfoxing.mp3';
+
+type ValidFFTSizeStringType = '2048' | '1024' | '512';
 
 const audioElement = document.querySelector('audio');
 const html = document.querySelector('html');
 const canvas = document.querySelector('canvas');
 const canvasContext = canvas?.getContext('2d');
-const FFT_SIZE = 2048;
-
+const FFT_SIZE_TO_RADIUS_MAP = {
+  '2048': Math.floor(((2048 / 2) / Math.PI) - 80),
+  '1024': Math.floor(((1024 / 2) / Math.PI) - 80),
+  '512': Math.floor(((512 / 2) / Math.PI) - 80)
+};
+const FFT_SIZE_TO_WAVE_HEIGHT_MAP = {
+  '2048': 0.5,
+  '1024': 0.4,
+  '512': 0.3
+}
+const MIN_FFT_SIZE = 512;
 
 let WIDTH = 1280;
 let HEIGHT = 320;
+let FFT_SIZE = 2048;
 let isNotAPlayPauseTouch = false;
 let previousTouch: (undefined | Touch);
 let audioContext: (undefined | null | AudioContext),
@@ -24,6 +36,31 @@ if (audioElement) {
   audioElement.src = audioURL;
 }
 
+/* SETUP */
+const setupAudioContext = () => {
+
+  if (!audioElement) {
+    return null;
+  }
+
+  audioContext = new AudioContext();
+  mediaElementNode = audioContext.createMediaElementSource(audioElement);
+  gainNode = audioContext.createGain();
+  analyserNode = audioContext.createAnalyser();
+
+  gainNode.gain.value = 0.2;
+
+  if (audioContext.state === 'suspended') {
+    audioContext.resume();
+  }
+
+  // Do not forget to connect the node to a destination
+  mediaElementNode.connect(analyserNode);
+  analyserNode.connect(gainNode);
+  gainNode.connect(audioContext.destination);
+};
+
+/* ANIMATION OPERATIONS */
 const logByteTimeDomainData = () => {
   if (!analyserNode) {
     return;
@@ -48,24 +85,6 @@ const logByteTimeDomainData = () => {
 
   logCancelId = requestAnimationFrame(logByteTimeDomainData);
 };
-
-const resizeObserver = new ResizeObserver((entries) => {
-  for (let entry of entries) {
-    if (entry.borderBoxSize) {
-      WIDTH = entry.borderBoxSize[0].inlineSize;
-      HEIGHT = entry.borderBoxSize[0].blockSize;
-
-      if (canvas && canvasContext) {
-        canvas.width = WIDTH;
-        canvas.height = HEIGHT;
-      
-        canvasContext.fillStyle = "black";
-        canvasContext.fillRect(0, 0, canvas.width, canvas.height);
-      }
-      return;
-    }
-  }
-});
 
 const drawByteTimeDomainData = () => {
   if (!analyserNode || !canvas || !canvasContext) {
@@ -98,28 +117,55 @@ const drawByteTimeDomainData = () => {
   canvasContext.stroke();
 };
 
-const setupAudioContext = () => {
-
-  if (!audioElement) {
-    return null;
+/* Code from ChatGPT */
+const drawCircle = () => {
+  if (!canvas || !canvasContext || !analyserNode) {
+    return;
   }
 
-  audioContext = new AudioContext();
-  mediaElementNode = audioContext.createMediaElementSource(audioElement);
-  gainNode = audioContext.createGain();
-  analyserNode = audioContext.createAnalyser();
+  animationCancelId = requestAnimationFrame(drawCircle);
 
-  gainNode.gain.value = 0.2;
+  const numPoints = FFT_SIZE;
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 2;
+  // @ts-ignore
+  const radius = FFT_SIZE_TO_RADIUS_MAP[numPoints];
+  const points = [];
 
-  if (audioContext.state === 'suspended') {
-    audioContext.resume();
+  console.log(radius)
+
+  canvasContext.fillStyle = 'black';
+  canvasContext.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Draw the circle
+  canvasContext.fillStyle = 'white';
+  canvasContext.strokeStyle = 'white';
+
+  analyserNode.fftSize = FFT_SIZE;
+  const byteTimeDomainData = new Uint8Array(analyserNode.fftSize);
+  analyserNode.getByteTimeDomainData(byteTimeDomainData);
+
+  for (let i = 0; i < numPoints; i++) {
+    let angle = (i / numPoints) * 2 * Math.PI;
+
+    // x = r * cos(theta)
+    // Adding byteTimeDomainData[i] to r because we want the point to
+    // represent the amplitude of the wave.
+    let x = centerX + (radius + byteTimeDomainData[i]) * Math.cos(angle);
+    // y = r * sin(theta)
+    let y = centerY + (radius + byteTimeDomainData[i]) * Math.sin(angle);
+    canvasContext.beginPath();
+    canvasContext.arc(x, y, 2, 0, 2 * Math.PI);
+    canvasContext.fill();
+    
+    // Store the points in an array for later access
+    points.push({x: x, y: y});
   }
 
-  // Do not forget to connect the node to a destination
-  mediaElementNode.connect(analyserNode);
-  analyserNode.connect(gainNode);
-  gainNode.connect(audioContext.destination);
-};
+  canvasContext.closePath();
+}
+
+/* AUDIO OPERATIONS */
 
 const playPauseAudio = () => {
   if (!audioElement) {
@@ -133,7 +179,8 @@ const playPauseAudio = () => {
   if (audioElement.paused) {
     audioElement.play();
     // logByteTimeDomainData();
-    drawByteTimeDomainData();
+    // drawByteTimeDomainData();
+    drawCircle();
   }
   else {
     audioElement.pause();
@@ -160,10 +207,42 @@ const decreaseVolume = (delta = 0.1) => {
     return;
   }
 
-  const newValue = gain.value - 0.1;
+  const newValue = gain.value - delta;
   (newValue > 0) && (gain.value = newValue);
 }
 
+/* RESIZE HANDLER */
+const resizeObserver = new ResizeObserver((entries) => {
+  for (let entry of entries) {
+    if (entry.borderBoxSize) {
+      WIDTH = entry.borderBoxSize[0].inlineSize;
+      HEIGHT = entry.borderBoxSize[0].blockSize;
+
+      if (canvas && canvasContext) {
+        canvas.width = WIDTH;
+        canvas.height = HEIGHT;
+      
+        canvasContext.fillStyle = "black";
+        canvasContext.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      const bestFFTSizeBasedOnWidth = Object.entries(FFT_SIZE_TO_RADIUS_MAP).sort((a, b) => b[1] - a[1]).find(([key, value]) => {
+        // @ts-ignore
+        return 2 * (value + FFT_SIZE_TO_WAVE_HEIGHT_MAP[key] * 500) < WIDTH
+      });
+
+      console.log(bestFFTSizeBasedOnWidth)
+      FFT_SIZE = bestFFTSizeBasedOnWidth ? Number.parseInt(bestFFTSizeBasedOnWidth[0]) : MIN_FFT_SIZE;
+
+      drawCircle();
+
+      return;
+    }
+  }
+});
+
+
+/* EVENT HANDLERS */
 const handleKeyDown = (e: KeyboardEvent) => {
   const { key } = e;
 
@@ -231,6 +310,7 @@ const handleTouchStart = (e: TouchEvent) => {
   previousTouch = e.changedTouches[0];
 }
 
+/* REGISTER EVENT LISTENERS */
 window.addEventListener('keydown', handleKeyDown);
 window.addEventListener('touchstart', handleTouchStart);
 window.addEventListener('touchend', handleTouchEnd);
