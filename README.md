@@ -9,6 +9,8 @@ An audio visualizer seemed really cool so that is what I built.
 
 ## Features
 
+The app can display the time-domain graph of an audio signal in a sine wave and also a circular sine wave fashion.
+
 ### Mobile users
 Mobile users can play and pause the audio by tapping the screen.
 They can also increase or decrease the audio volume by moving their fingers up and down the screen.
