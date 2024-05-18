@@ -34,7 +34,7 @@ h1 {
 button {
   border-radius: 8px;
   border: 1px solid transparent;
-  padding: 0.6em 1.2em;
+  padding: 0 1.2em;
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
@@ -42,9 +42,7 @@ button {
   cursor: pointer;
   transition: border-color 0.25s;
 }
-button:hover {
-  border-color: #646cff;
-}
+
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
@@ -63,18 +61,6 @@ button:focus-visible {
   }
 }
 
-.bar {
-  height: 1rem;
-  width: 320px;
-  background-color: #1a1a1a;
-}
-
-.filled-bar {
-  height: inherit;
-  width: 320px;
-  background-color: bisque;
-}
-
 canvas {
   display: block;
 }
@@ -85,21 +71,44 @@ canvas {
   height: 2rem;
   top: 20px;
   left: calc(100% - 90%);
+}
+
+.overlay-controls {
   display: flex;
   gap: 1rem;
 }
 
-.overlay > *:focus {
-  outline: none;
+.overlay-controls > * {
+  border-radius: 4px;
+  background-color: grey;
+  outline: white;
+  text-align: center;
 }
 
 .song-selector {
   height: inherit;
   flex: 1;
-  text-align: center;
   font-size: 1.25rem;
 }
 
 .waveform-selector {
   font-size: 1.2rem;
+  flex-shrink: 1;
 }
+
+  @media (max-width: 700px) {
+    .overlay {
+      left: calc(100% - 99%);
+    }
+
+    .overlay-controls {
+      flex-wrap: wrap;
+    }
+    .song-selector, .waveform-selector, button {
+      font-size: 1rem;
+    }
+
+    .song-selector {
+      text-overflow: ellipsis;
+    }
+  }

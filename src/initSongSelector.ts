@@ -20,17 +20,6 @@ export default function initSongSelector (cb: Function) {
     e.stopPropagation();
   }
 
-  const handleChange = (e: SelectElementChangeEvent) => {
-    e.stopPropagation();
-
-    if (!e.target) {
-      return;
-    }
-
-    // @ts-ignore
-    cb(LABEL_TO_AUDIO_URL_MAP[e.target.value])
-  }
-
   Object.keys(LABEL_TO_AUDIO_URL_MAP).forEach((key) => {
     const option = document.createElement('option');
 
@@ -41,5 +30,16 @@ export default function initSongSelector (cb: Function) {
   });
   
   songSelector.addEventListener('touchend', handlePropogation);
-  songSelector.addEventListener('change', handleChange);
+  songSelector.addEventListener('change', function (e) {
+    e.stopPropagation();
+
+    if (!e.target) {
+      return;
+    }
+
+    this.blur();
+
+    // @ts-ignore
+    cb(LABEL_TO_AUDIO_URL_MAP[e.target.value])
+  });
 }
