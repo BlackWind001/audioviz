@@ -98,14 +98,19 @@ canvas {
 
   @media (max-width: 700px) {
     .overlay {
-      left: calc(100% - 99%);
+      left: 0;
+      width: 100%;
+      padding: 0 0.5rem;
     }
 
     .overlay-controls {
       flex-wrap: wrap;
     }
+
     .song-selector, .waveform-selector, button {
       font-size: 1rem;
+      text-overflow: ellipsis;
+      max-width: 45%;
     }
 
     .song-selector {
