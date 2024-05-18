@@ -3,10 +3,6 @@ import upliftPiano from '../public/inspiring-emotional-uplifting-piano.mp3';
 import outfoxing from '../public/outfoxing.mp3';
 import theWayHome from '../public/the-way-home.mp3';
 
-type SelectElementChangeEvent = Event & {
-  target: EventTarget | null;
-}
-
 export default function initSongSelector (cb: Function) {
   const LABEL_TO_AUDIO_URL_MAP = {
     'Playing in Color': playingInColor,

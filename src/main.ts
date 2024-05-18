@@ -250,7 +250,7 @@ const handleKeyDown = (e: KeyboardEvent) => {
   }
 }
 
-const handleTouchEnd = (e: TouchEvent) => {
+const handleTouchEnd = () => {
   if (isNotAPlayPauseTouch) {
 
     // Cleanup
